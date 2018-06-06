@@ -35,7 +35,10 @@ const waitUntil = (condition, options = {}) => {
   })
 }
 
-const getDescription = () => getDescriptionBox().textContent
+const getDescription = () => {
+  const el = getDescriptionBox()
+  return el && el.textContent
+}
 
 const titleIsDefault = () => {
   const el = getTitleBox()
@@ -50,7 +53,14 @@ const clearDefaultTitleAndFocus = () => {
   }
 }
 
+const zoomInfoExists = () => ZOOM_URL_REGEX.test(getDescription())
+
 const __main = async () => {
+  if (zoomInfoExists()) {
+    console.log('Zoom info already added')
+    return
+  }
+
   console.log('Try to add Zoom info...')
   try {
     await waitUntil(() => !!getScheduleButton())
@@ -63,12 +73,10 @@ const __main = async () => {
     return
   }
 
-  const currentDescription = getDescription()
-  if (ZOOM_URL_REGEX.test(currentDescription)) {
+  if (zoomInfoExists()) {
     console.log('Zoom info already added')
     return
   }
-
   getScheduleButton().click()
 
   try {
@@ -77,6 +85,8 @@ const __main = async () => {
   } catch (err) {
     console.log('Event title was already set')
   }
+
+  console.log('Complete')
 }
 
 const locks = {}
@@ -98,8 +108,12 @@ const main = lock('main', __main)
 // Listen for messages sent from background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message === 'NEW_EVENT') {
+    console.log('NEW_EVENT', request)
     main()
   }
 })
 
-main()
+if (location.pathname === '/calendar/r/eventedit') {
+  console.log('Main thread')
+  main()
+}
