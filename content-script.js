@@ -13,33 +13,47 @@ const getElement = (selector) => {
 
 const getScheduleButton = () => getElement('#zoom_schedule_button')
 const getJoinButton = () => getElement('#zoom_schedule_meeting_url')
-const getDescriptionBox = () => getElement('[aria-label=Description]')
+const getDescriptionBox = () => getElement('[aria-label="Description"]')
+const getTitleBox = () => getElement('[aria-label="Title"]')
 
-const waitForScheduleButton = (options = {}) => {
+const waitUntil = (condition, options = {}) => {
   return new Promise((resolve, reject) => {
     const timeout = options.timeout || 10000
     const interval = options.interval || 50
     const start = new Date()
-    const exists = () => {
+    const wait = () => {
       if ((new Date() - start) > timeout) {
         return reject()
       }
-      const button = getScheduleButton()
-      if (button == null) {
-        return setTimeout(exists, interval)
+      const result = condition()
+      if (result) {
+        return resolve(result)
       }
-      resolve(button)
+      setTimeout(wait, interval)
     }
-    exists()
+    wait()
   })
 }
 
 const getDescription = () => getDescriptionBox().textContent
 
-const main = async () => {
-  let scheduleButton
+const titleIsDefault = () => {
+  const el = getTitleBox()
+  return el && /Zoom Meeting/.test(el.value)
+}
+
+const clearDefaultTitleAndFocus = () => {
+  if (titleIsDefault()) {
+    const el = getTitleBox()
+    el.value = ''
+    el.focus()
+  }
+}
+
+const __main = async () => {
+  console.log('Try to add Zoom info...')
   try {
-    scheduleButton = await waitForScheduleButton()
+    await waitUntil(() => !!getScheduleButton())
   } catch (err) {
     if (getJoinButton()) {
       console.log('Zoom info already added')
@@ -55,8 +69,31 @@ const main = async () => {
     return
   }
 
-  scheduleButton.click()
+  getScheduleButton().click()
+
+  try {
+    await waitUntil(() => titleIsDefault())
+    clearDefaultTitleAndFocus()
+  } catch (err) {
+    console.log('Event title was already set')
+  }
 }
+
+const locks = {}
+const lock = (key, fn) => {
+  return () => {
+    if (locks[key]) return
+    locks[key] = true
+    try {
+      fn()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      locks[key] = false
+    }
+  }
+}
+const main = lock('main', __main)
 
 // Listen for messages sent from background.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -64,3 +101,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     main()
   }
 })
+
+main()

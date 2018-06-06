@@ -1,10 +1,11 @@
 {
   "name": "C'mon and Zoom!",
-  "version": "1.0",
+  "version": "1.0.0",
   "description": "Automatically add Zoom meeting info to new Google Calendar events",
   "manifest_version": 2,
   "permissions": [
     "activeTab",
+    "declarativeContent",
     "webNavigation"
   ],
   "background": {
@@ -18,9 +19,17 @@
     }
   ],
   "icons": {
-    "16": "images/zoom_f.jpg",
-    "32": "images/zoom_f.jpg",
-    "48": "images/zoom_f.jpg",
-    "128": "images/zoom_f.jpg"
+    "16": "images/zoom-16.png",
+    "32": "images/zoom-32.png",
+    "48": "images/zoom-48.png",
+    "128": "images/zoom-128.png"
+  },
+  "page_action": {
+    "default_icon": {
+      "16": "images/zoom-16.png",
+      "32": "images/zoom-32.png",
+      "48": "images/zoom-48.png",
+      "128": "images/zoom-128.png"
+    }
   }
 }
